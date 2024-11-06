@@ -1,0 +1,48 @@
+---
+title: "Random Walks"
+author: "Matthew Seguin"
+date: ""
+geometry: margin=1.5cm
+output:
+  pdf_document:
+    extra_dependencies: ["setspace", "amsmath", "amsfonts", "amsthm", "physics", "indentfirst"]
+  html_document: default
+---
+
+\section*{Introduction}
+\begin{center}
+\doublespacing
+A random walk in $\mathbb{R}^n$ beginning at a point $z\in\mathbb{R}^n$ is a stochastic process where a particle starting at point $z$ randomly moves during each iteration a length $l$ (generally equal to 1) in one direction along any of the $n$ axes. The motion of the particle depends on a $n$ x 2 probability matrix which I shall call $P$ where the first column represents the probability for each axis of moving "left" by $l$ and the second column represents the probability for each axis of moving "right" by $l$. By moving "left" and "right" I mean if your position along the $k$th axis before the move is $S$ then $S - l$ represents a move to the "left" along the $k$th axis and $S + l$ represents a move to the "right" along the $k$th axis. For example, if $n\geq 3$ then the matrix entry at $3, 2$ represents the probability of moving "right" along the 3rd axis. Note that the sum of all entries in $P$ must equal 1.
+\\In the trivial case if we take $l = 0$ then the particle never moves.
+\\The simplest, non-trivial random walk is a random walk in one dimension where $P = [\:p, 1 - p\:]$ for some $p\in [0, 1]$.
+\break
+\\In this paper I will examine the nature of random walks and answer some fundamental questions such as:
+\begin{itemize}
+  \item What is the probability that a random walk of length $m$ returns the particle back to the starting point?
+  \item What is the probability that the particle returns to the starting point during a random walk of infinite length?
+  \item What is the expected number of iterations for the particle to return to the starting point?
+  \item What is the best estimate for the position of the particle after a random walk of length $m$?
+  \item Do either the starting point $z$ or distance $l$ change the outcome of these results?
+\end{itemize}
+\end{center}
+
+
+\newpage
+\section*{One Dimension}
+\begin{center}
+\doublespacing
+As with most things it is useful to solidify your understanding of the simplest case before moving on to more complicated problems.
+\\So we will begin by looking at one dimensional random walks, in this case our starting point $z\in\mathbb{R}$ and our probability matrix is $P = [\:p, 1 - p\:]$ for some $p\in [0, 1]$ as discussed before.
+\\To start I will take $z = 0$ and $l = 1$, these are the easiest to work with and we will see later these values only actually affect the the best estimate for the position.
+\break
+\\Denote the position of our particle after $m$ moves by $X_m$. Then $X_0 = 0$. For $m > 0$ it will be the case that $X_m$ is a non-trivial random variable, this is readily apparent as there are many ways for the particle to travel.
+\\For example:
+\\$X_1$ has the following distribution
+\begin{tabular}{|c | c|} 
+ \hline
+ P($X_1$ = -1) & P($X_1$ = 1) \\ [0.5ex] 
+ \hline\hline
+ $p$ & $1 - p$ \\ 
+ \hline
+\end{tabular}
+\end{center}

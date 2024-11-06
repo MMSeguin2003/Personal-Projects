@@ -1,0 +1,364 @@
+---
+title: "Dice Roll Strategy"
+author: "Matthew Seguin"
+date: ""
+geometry: margin=1.5cm
+output:
+  pdf_document:
+    extra_dependencies: ["setspace", "amsmath", "amsfonts", "amsthm", "physics"]
+  html_document: default
+---
+
+
+\section*{Introduction}
+\begin{center}
+\doublespacing
+Imagine you are trapped in a room with the only way to escape being to correctly predict the roll of an n-sided dice. You do not know if this is a fair dice or not, but you are allowed to roll the dice without guessing as many times as you would like.
+\break
+\\What is your best strategy for getting out?
+\\Should you hope that the dice is fair?
+\\How many sides should you hope for the dice to have?
+\\How many times should you roll the dice?
+\break
+\\The answers to these questions are fairly intuitive, but let's look at the math behind this problem and some simulations of different strategies.
+\break
+\\In this document I will show several different strategies for predicting the next roll of an n-sided dice and will analyze which is the most effective. The dice is not assumed to be fair, so some strategies will perform better than others. For each strategy I take a large number of different dice probabilities in order to see how each performs at different levels. As a side note this can also be used to model a coin flip if you take n = 2.
+\end{center}
+
+\newpage
+\section*{Theory}
+\begin{center}
+\doublespacing
+At some point you have to guess and you will want to maximize the chance that your guess matches the actual roll of the dice.
+\break
+\\Assume the dice has some true probability vector $p = (p_1, p_2, p_3, ..., p_n)$ where $p_k$ is the probability of rolling a $k$. Further assume that each roll is independent from previous rolls. Then let $X = (k_1, k_2, k_3, ..., k_n)$ be the respective counts for each side from rolling the dice $m$ times.
+\break
+\\Then $X$ by definition follows a multinomial distribution with parameters $m$ and $p$, that is $X\sim MN(m, p)$.
+\\This means that the expected counts of each roll are $\mathbb{E}(X) = mp = m(p_1, p_2, p_3, ..., p_n)$.
+\\By the law of large numbers we expect for large $m$ that $X$ will be very close to $\mathbb{E}(X)$.
+\\This means that for large $m$ we expect $\frac{X}{m} = \frac{1}{m}(k_1, k_2, k_3, ..., k_n)$ to be very close to $\frac{1}{m}\mathbb{E}(X) = (p_1, p_2, p_3, ..., p_n)$.
+\break
+\\So we have found one way to come up with a guess. If you roll the dice many times and count the number of rolls of each side and divide by the total number of rolls you have approximated the probability of each side.
+\\You will then want to make your guess the most likely side to roll, hence you will want to choose the side that has come up the most so far.
+\break
+\\This is a rather hand-wavy derivation though it has similar logic to what I shall show next.
+\newpage
+A more formal way to do this is to introduce the method of maximum likelihood in order to estimate our probability vector.
+\\This is where given a set of data from a known distribution you compute the parameters for that distribution that would give you the highest likelihood of getting what you observed.
+\\The maximum likelihood estimator has very nice properties in that it is asymptotically unbiased, consistent, and for large sample size achieves the Cramer-Rao lower bound for the variance of an estimator.
+\\Simply put this means that the maximum likelihood estimator will be very close to the true value for large sample size.
+\\Again we know $X\sim MN(m, p)$ so:
+\[P(X = (k_1, k_2, k_3, ..., k_n)) =\frac{m!}{k_1!k_2!k_3!...k_n!}\prod _{j=1}^n p_j^{k_j} = L(p)\]
+When $\sum k_j = m$ and is otherwise 0. Furthermore we must have that $\sum p_j = 1$.
+\break
+\\\textbf{Proof:}
+\\The probability of observing something happen must be 1 so we must have that $\sum p_j = 1$.
+\\There are $m$ observations so $\sum k_j = k_1 + k_2 + ... + k_n\neq m$ can't happen and $P(X = (k_1, k_2, ..., k_n)) = 0$ if $\sum k_j\neq m$.
+\\Now assume $\sum k_j = k_1 + k_2 + ... + k_n = m$ and $P(x_i = k) = p_k$ with each observation independent of previous ones.
+\\Let the ordered (i.e. starting at the first observation and ending at the last) sample be $X = (x_1, x_2, x_3, ..., x_m)$.
+\\Each of these observations must fall in one of the groups $1, 2, 3, ..., n$ and $P(x_i = k) = p_k$ for $k\in\{1, 2, 3, ...\}$.
+\\Therefore if we have $k_1$ observations of 1, $k_2$ observations of 2, ..., and $k_n$ observations of $n$ then the probability of getting this exact ordered sample is $(p_1)^{k_1}(p_2)^{k_2}...(p_n)^{k_n}$ because every subsequent observation is independent of previous ones.
+\\This is true for any sample with $k_1$ observations of 1, $k_2$ observations of 2, ..., and $k_n$ observations of $n$ so each such sample has the same probability above.
+\\Now we know we have $m$ observations total, so there are $\binom{m}{k_1} =\frac{m!}{k_1!(m-k_1)!}$ ways to choose when we observe the 1's.
+\\After that we have $m-k_1$ observations left, so there are $\binom{m-k_1}{k_2} =\frac{(m-k_1)!}{k_2!(m-k_1-k_2)!}$ ways to choose when we observe the 2's.
+\\Following this process then multiplying all the terms to get the total number of ways to observe a sample with $k_1$ observations of 1, $k_2$ observations of 2, ..., and $k_n$ observations of $n$, we get the total possible number of such samples is: \[\Big{(}\frac{m!}{k_1!(m-k_1)!}\Big{)}\Big{(}\frac{(m-k_1)!}{k_2!(m-k_1-k_2)!}\Big{)}...\Big{(}\frac{(m-k_1-k_2-...-k_{n-1})!}{k_n!(m-k_1-k_2-...-k_{n-1}-k_n)!}\Big{)} =\frac{m!}{k_1!k_2!...k_n!}\]
+Since there are $\frac{m!}{k_1!k_2!...k_n!}$ total ways of observing the sample $k_1$ observations of 1, $k_2$ observations of 2, ..., and $k_n$ observations of $n$ each way with probability $(p_1)^{k_1}(p_2)^{k_2}...(p_n)^{k_n}$ we get that:
+\[P(X = (k_1, k_2, k_3, ..., k_n)) =\frac{m!}{k_1!k_2!k_3!...k_n!} p_1^{k_1} p_2^{k_2}...p_n^{k_n} =\frac{m!}{k_1!k_2!k_3!...k_n!}\prod _{j=1}^n p_j^{k_j} = L(p)\]
+Hence proved \qedsymbol
+\newpage
+We want to maximize this probability so that our observed the sample is the most likely one to have. This is easier if we consider the log of this probability as maximizing one amounts to maximizing the other and the product will become a sum.
+\[log(L(p)) =log\Big{(}\frac{m!}{k_1!k_2!k_3!...k_n!}\prod _{j=1}^n p_j^{k_j}\Big{)} = log\Big{(}\frac{m!}{k_1!k_2!k_3!...k_n!}\Big{)} +\sum _{j=1}^n k_j log(p_j) = l(p)\]
+\\So we are maximizing $l(p)$ subject to the constraint $C(p) = \sum _{j=1}^n p_j = 1$.
+\\Notice that:
+\[\frac{\partial}{\partial p_t} l(p) =\frac{\partial}{\partial p_t} log\Big{(}\frac{m!}{k_1!k_2!k_3!...k_n!}\Big{)} +\frac{\partial}{\partial p_t}\sum _{j=1}^n k_j log(p_j) = 0 +\sum _{j=1}^n \frac{\partial}{\partial p_t}k_j log(p_j) = 0 + ... + 0 +\frac{k_t}{p_t} + 0 + ... + 0 =\frac{k_t}{p_t}\]
+Also we know that:
+\[\frac{\partial}{\partial p_t} C(p) =\frac{\partial}{\partial p_t} \sum _{j=1}^n p_j =\sum _{j=1}^n \frac{\partial}{\partial p_t}p_j = 0 + ... + 0 + 1 + 0 + ... + 0 = 1\]
+So using Lagrange multipliers we would have $\grad l =\lambda\grad C$ which is expressed below:
+\[\Big{(}\frac{\partial}{\partial p_1} l(p),\frac{\partial}{\partial p_2} l(p),\frac{\partial}{\partial p_3} l(p),..., \frac{\partial}{\partial p_n} l(p)\Big{)} = \lambda \Big{(}\frac{\partial}{\partial p_1} C(p),\frac{\partial}{\partial p_2} C(p),\frac{\partial}{\partial p_3} C(p),..., \frac{\partial}{\partial p_n} C(p)\Big{)}\]
+\[\Big{(}\frac{k_1}{p_1}, \frac{k_2}{p_2}, \frac{k_3}{p_3},..., \frac{k_n}{p_n}\Big{)} = \lambda (1, 1, 1,..., 1)\]
+\\This implies that for each $j\in\{1, 2, 3, ..., n\}$ we have $\lambda p_j = k_j$.
+\\Adding up all these equations we get \[\lambda\sum _{j=1}^n p_j = \lambda =\sum_{j=1}^n k_j = m\]
+\\So for each $j\in\{1, 2, 3, ..., n\}$ we have that $\hat{p}_j =\frac{k_j}{\lambda} =\frac{k_j}{m}$ is the best estimate for the probability of rolling a $j$ according to such an observed sample.
+\\Hence our best estimate probability vector is $\hat{p} = (\hat{p}_1,\hat{p}_2,\hat{p}_3, ...,\hat{p}_3) =\frac{1}{m}(k_1, k_2, k_3, ..., k_n)$.
+\\Since we want to choose the one with the highest estimated probability we want to choose the one that has been observed the most, that is let:
+\[\text{Guess} = \{j:k_j = max\{k_1, k_2, k_3, ..., k_n\}\}\]
+
+\newpage
+Now that we have our ideal strategy, pick which side has been rolled the most lets examine those questions from earlier.
+\begin{itemize}
+    \item Should you want a fair dice or a biased dice?
+    \\Normally playing with a biased dice is seen as a disadvantage, this is because in games normally you expect a dice to be fair and if you are playing against an opponent who knows the dice is unfair you are at an information deficit and hence a disadvantage. However, here you are given the opportunity to examine the dice. If the dice truly is fair and you roll it a large number of times, coming to the conclusion that it is fair, then you have a $\frac{1}{n}$ chance of guessing correctly. However, if the dice is biased you will notice so as the number of rolls grows larger, and if rolled enough you will choose the side with the highest probability correctly, which will be the side that has appeared the most. Since not all the sides are equally likely at least one must have more than a $\frac{1}{n}$ chance of turning up (I shall provide a proof of this below). So you will then have more than a $\frac{1}{n}$ chance of guessing correctly. Therefore in this scenario you should hope that the dice is biased even though ultimately your fate is left to chance.
+    \item How many sides should you hope the dice has?
+    \\There are two sides to this problem. If the dice is fair then your best chance is obviously if it only has 2 sides, then you have a $\frac{1}{2}$ chance of guessing correctly whereas if it has more than two you have a $\frac{1}{n} <\frac{1}{2}$ chance of guessing correctly. If the dice is not fair then you should also hope that it only has 2 sides though. This is because if it has 3 or more sides then a lack of probability for one side can be result in the other sides evenly sharing the excess probability and only slightly increasing the average probability of the other sides whereas with two sides there is only one side for that remaining probability to go. In general if one side has a negligible probability of appearing (that is it will practically never be rolled) and if the probability that would be for that side is evenly distributed to the other sides you are essentially rolling an $n-1$ sided dice rather than an $n$ sided one. This will be shown later in the simulation.
+    \item How many times should you roll the dice?
+    \\The more you roll the dice the lower the variance of the total sum of rolls for each side gets, so you are decreasing the likelihood that you just got a very unlikely set of rolls each time you roll again. Still, you can't roll forever. The answer to this question also depends on how much risk you want to take. A good rule of thumb would be to do at least 100 rolls though as the variance starts to get very low at that point. Even then 100 rolls of a dice doesn't take long at all so as long as you have some method of recording rolls I would suggest rolling more.
+\end{itemize}
+\textbf{Proof that at least one side must have probability greater than $\frac{1}{n}$ if not all are equal to $\frac{1}{n}$:}
+\\Let $p = (p_1, p_2, p_3, ..., p_n)$. Then consider $p_1, p_2, p_3, ..., p_{n-1}$.
+\\If one of these is greater than $\frac{1}{n}$ then we are done. Otherwise $p_j\leq\frac{1}{n}$ for each $j\in\{1, 2, 3, ..., n-1\}$.
+\\Furthermore it must be that at least one of $p_j <\frac{1}{n}$ for $j\in\{1, 2, 3, ..., n-1\}$.
+\\Otherwise $\sum _{j=1}^{n-1} p_j =\frac{n-1}{n}$ and hence $p_n = 1 -\sum _{j=1}^{n-1} p_j = 1 - \frac{n-1}{n} =\frac{1}{n}$, a contradiction since not all $p_j$ are equal to $\frac{1}{n}$.
+\\So we have that at least one of the $p_j <\frac{1}{n}$ for $j\in\{1, 2, 3, ..., n-1\}$.
+\\Hence $\sum _{j=1}^{n-1} p_j <\frac{n-1}{n}$ and $p_n = 1 -\sum _{j-1}^{n-1} p_j > 1 -\frac{n-1}{n} =\frac{1}{n}$ \qedsymbol
+\end{center}
+
+
+\newpage
+\section*{Simulation}
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+\textbf{Strategy 1} is where you switch your choice every time. This is not a very good strategy compared to the others, it relies purely on luck.
+
+```{r, include=FALSE}
+strategy_1 <- function(rolls, N){
+  return (sample(1:N, size = length(rolls), replace = TRUE))
+}
+```
+
+\textbf{Strategy 2} is where you switch to whatever the last roll was. This is a much better strategy than the first one clearly as we don't exactly know whether the dice is fair or not so this will perform well when it isn't.
+
+```{r, include=FALSE}
+strategy_2 <- function(rolls, N){
+  l <- length(rolls)
+  choice_vec <- c(sample(1:N, 1), rep(0, l - 1))
+  for (i in 1:(l - 1)){
+    choice_vec[i+1] <- rolls[i]
+  }
+  return (choice_vec)
+}
+```
+
+\textbf{Strategy 3} is where you pick what has been rolled the most so far, and if it is tied then you switch from your previous choice.
+
+```{r, include=FALSE}
+strategy_3 <- function(rolls, N){
+  l <- length(rolls)
+  choice_vec <- c(sample(1:N, 1), rep(0, l - 1))
+  counts <- matrix(0, nrow = N, ncol = l-1)
+  counts[rolls[1],1] <- 1
+  for (i in 2:(l - 1)){
+    x <- rep(0, N)
+    x[(rolls[i])] <- 1
+    counts[,i] <- counts[,i-1] + x
+  }
+  for (i in 1:(l - 1)){
+    max <- max(counts[,i])
+    index <- which(counts[,i] == max)
+    if (length(index) > 1){
+      choice_vec[i+1] <- sum(index[index != choice_vec[i]])
+    } else{
+      choice_vec[i+1] <- index
+    }
+  }
+  return (choice_vec)
+}
+```
+
+\textbf{Strategy 4} is where you pick what has been rolled the most so far, and if it is tied then you don't switch from your previous choice.
+
+```{r, include=FALSE}
+strategy_4 <- function(rolls, N){
+  l <- length(rolls)
+  choice_vec <- c(sample(1:N, 1), rep(0, l - 1))
+  counts <- matrix(0, nrow = N, ncol = l-1)
+  counts[rolls[1],1] <- 1
+  for (i in 2:(l - 1)){
+    x <- rep(0, N)
+    x[(rolls[i])] <- 1
+    counts[,i] <- counts[,i-1] + x
+  }
+  for (i in 1:(l - 1)){
+    max <- max(counts[,i])
+    index <- which(counts[,i] == max)
+    if (length(index) > 1){
+      choice_vec[i+1] <- sum(index[index == choice_vec[i]])
+    } else{
+      choice_vec[i+1] <- index
+    }
+  }
+  return (choice_vec)
+}
+```
+
+\doublespacing
+
+When N \> 2 it is harder to visualize the graphs, so for the sake of simplicity each graph will have the x axis as the probability of rolling a side (not any specific side) for example rolling a 1, but without loss of generality it is the same as for any other side. So it will simply be the probability of rolling a side, and the y axis will be the probability the strategy guess matches the roll. The blue horizontal line will be at $\frac{1}{N-1}$ and the red horizontal line will be at $\frac{1}{N}$. So the blue line represents the chance of randomly guessing the correct side for an $N-1$ sided dice, and the red line will represent the chance of randomly guessing the correct side for an $N$ sided dice.
+
+```{r, include=FALSE}
+prob_generator <- function(m = 5000, N){
+  p_vecs <- matrix(0, nrow = N, ncol = m)
+  for (i in 1:m){
+    max_p <- 1
+    for (j in 1:(N-1)){
+      if (max_p == 0){
+        p_vecs[j,i] <- 0
+      } else{
+        p_vecs[j,i] <- runif(n = 1, min = 0, max = max_p)
+        max_p <- 1 - sum(p_vecs[,i])
+      }
+    }
+    p_vecs[N,i] <- 1 - sum(p_vecs[,i])
+    p_vecs[,i] <- p_vecs[sample(1:N, N),i]
+  }
+  return (p_vecs)
+}
+
+roll_tester <- function(m, N, p, strat){
+  rolls <- sample(rep(1:N), m, replace = TRUE, prob = p)
+  k <- sum(strat(rolls, N) == rolls)
+  return (k/m)
+}
+
+get_roll_data <- function(n = 100, m = 100, N, p = rep(1/6, 6), strat){
+  data <- replicate(n, roll_tester(m, N, p, strat))
+  return (data)
+}
+
+get_p_range_roll_data <- function(strat, N){
+  p_range <- prob_generator(N = N)
+  l <- ncol(p_range)
+  data <- rep(0, l)
+  for (x in 1:l){
+    p_data <- get_roll_data(p = p_range[,x], N = N, strat = strat)
+    data[x] <- mean(p_data)
+  }
+  filtered_data <- data.frame(strat = data)
+  for (i in 1:N){
+    p_i <- p_range[i,]
+    filtered_data$X <- p_i
+    col_name <- paste("p_val", i, sep = "_")
+    names(filtered_data)[names(filtered_data) == "X"] <- col_name
+  }
+  return(filtered_data)
+}
+
+grapher <- function(N = 6, strat = strategy_3, one_graph = TRUE){
+  p_roll_data <- get_p_range_roll_data(strat = strat, N = N)
+  if (one_graph){
+    graph <- ggplot(data = p_roll_data, aes(x = .data[["p_val_1"]])) + 
+      geom_point(aes(y = strat)) +
+        geom_hline(yintercept = 1/N, col = "red") + 
+          geom_hline(yintercept = 1/(N-1), col = "blue") +
+            labs(title = "Strategy Performance", x = "Probability of Rolling Side", y = "Probability Strategy Guess Matches") +
+              ylim(0:1) + xlim(0:1)
+    plot(graph)
+  } else{
+    for (i in 1:N){
+    graph_i <- ggplot(data = p_roll_data, aes(x = .data[[paste("p_val", i, sep = "_")]])) + 
+      geom_point(aes(y = strat)) + 
+        geom_hline(yintercept = 1/N, col = "red") + 
+          geom_hline(yintercept = 1/(N-1), col = "blue") +
+            labs(title = "Strategy Performance", x = paste("Probability of Rolling", i, sep = " "), y = "Probability Strategy Guess Matches") +
+              ylim(0:1) + xlim(0:1)
+    plot(graph_i)
+    }
+  }
+  return (invisible(p_roll_data))
+}
+```
+
+
+\newpage
+\section*{Results for n = 2:}
+\section*{Strategy 1}
+
+```{r}
+grapher(N = 2, strat = strategy_1)
+```
+
+
+\newpage
+\section*{Strategy 2}
+
+```{r}
+grapher(N = 2, strat = strategy_2)
+```
+
+
+\newpage
+\section*{Strategy 3}
+
+```{r}
+grapher(N = 2, strat = strategy_3)
+```
+
+
+\newpage
+\section*{Strategy 4}
+
+```{r}
+grapher(N = 2, strat = strategy_4)
+```
+
+This produces exactly the results you would expect. The first strategy is level and matches half of the time no matter the probability for the "dice", the second strategy performs very well at high and low probabilities as it will guess what the previous "roll" was which will be dominated by one side in these edge cases. That is if the probability of one side is very high then it is likely to appear much more than the other side, and so Strategy 2 will repeatedly pick it. Strategy 3 and 4 are practically identical and perform the best, their effectiveness grows faster than strategy 2 as the "dice" becomes more unfair. They work better than Strategy 2 because they carry more information than Strategy 2 does on each roll. Strategy 2 only records the previous "roll" whereas Strategy 3 and 4 record the total number of "rolls" of each side. They all guess correctly about half the time when the "dice" is fair. \newpage
+
+
+\section*{Results for n = 3:}
+\section*{Strategy 1}
+
+```{r}
+grapher(N = 3, strat = strategy_1)
+```
+
+
+\newpage
+\section*{Strategy 2}
+
+```{r}
+grapher(N = 3, strat = strategy_2)
+```
+
+
+\newpage
+\section*{Strategy 3}
+
+```{r}
+grapher(N = 3, strat = strategy_3)
+```
+
+
+\newpage
+\section*{Strategy 4}
+
+```{r}
+grapher(N = 3, strat = strategy_4)
+```
+
+This is a little different than for n = 2. If the probability of rolling a side is high then the good strategies recognize that and are able to accurately guess rolls. However, if the probability of rolling a side is low then the leftover probability can either be given all to one other side (which makes it easier for the good strategies to guess) or spread more evenly (which makes it more difficult for the good strategies to guess). For example if the probability of rolling a 1 is $p_1 = 0.01$ then $p_2 + p_3 = 0.99$, if $p_2 = 0.98$ then the strategy will easily come to predict what will happen. However, since there are two sides what can happen is $p_2 = p_3 =\frac{0.99}{2}$ and so it is much more difficult to predict what happens. This can be seen in how spread out the left side of the graph is for the good strategies, namely the probability our guess matches can vary widely in this range. In general as the probability of rolling a side becomes arbitrarily small, if the leftover probability is spread evenly to the other sides then the probability the good strategies guess correctly is about $\frac{1}{n-1}$ (represented by the blue line), this was discussed before since you are essentially rolling a fair $n-1$ sided dice. This can be seen in the graph as near the left side the points stay above the lower limit of the blue line at $\frac{1}{n-1}$. \newpage
+
+
+\section*{Results for n = 4:}
+\section*{Strategy 1}
+
+```{r}
+grapher(N = 4, strat = strategy_1)
+```
+
+
+\newpage
+\section*{Strategy 2}
+
+```{r}
+grapher(N = 4, strat = strategy_2)
+```
+
+
+\newpage
+\section*{Strategy 3}
+
+```{r}
+grapher(N = 4, strat = strategy_3)
+```
+
+
+\newpage
+\section*{Strategy 4}
+
+```{r}
+grapher(N = 4, strat = strategy_4)
+```
+
+This is actually analogous to the n = 3 case. This is because there are several other sides to distribute probability to if the probability of rolling a side is low. Again if the probability of rolling a side is very low and the leftover probability is spread evenly to the other sides then the probability the good strategies guess correctly is about $\frac{1}{n-1}$ (represented by the blue line). This pattern of the graphs actually continues for all $n\in\mathbb{N}$. \break Notice how in each case near the middle every strategy approaches the red line which is the line to represent randomly guessing, and in the good strategies on the left side of the graph most of the points are above the blue line which is the line to represent randomly guessing from the remaining $n-1$ sides.

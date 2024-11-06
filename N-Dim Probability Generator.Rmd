@@ -1,0 +1,36 @@
+---
+title: "N-Dim Probability Generator"
+output: html_document
+---
+
+Here I will show how to generate a random set of probability vectors (arbitrary length $n$). The entries are chosen uniformly from 0 to the left over probability after the previous ones have been chosen then the order is randomized otherwise we will get a pattern of smaller probabilities near the end.
+
+## Generator
+```{r}
+prob_generator <- function(N, m = 2500){
+  p_vecs <- matrix(0, nrow = N, ncol = m)
+  for (i in 1:m){
+    max_p <- 1
+    for (j in 1:(N-1)){
+      if (max_p == 0){
+        p_vecs[j,i] <- 0
+      } else{
+        p_vecs[j,i] <- runif(n = 1, min = 0, max = max_p)
+        max_p <- 1 - sum(p_vecs[,i])
+      }
+    }
+    p_vecs[N,i] <- 1 - sum(p_vecs[,i])
+    p_vecs[,i] <- p_vecs[sample(1:N, N),i]
+  }
+  return (p_vecs)
+}
+```
+
+## Examining Distribution
+```{r}
+dist_tester <- function(nset){
+  for (i in nset){
+    pset <- as.data.frame(t(prob_generator(i, 2500)))
+  }
+}
+```
