@@ -195,18 +195,11 @@ strategy_4 <- function(rolls, N){
 When N \> 2 it is harder to visualize the graphs, so for the sake of simplicity each graph will have the x axis as the probability of rolling a side (not any specific side) for example rolling a 1, but without loss of generality it is the same as for any other side. So it will simply be the probability of rolling a side, and the y axis will be the probability the strategy guess matches the roll. The blue horizontal line will be at $\frac{1}{N-1}$ and the red horizontal line will be at $\frac{1}{N}$. So the blue line represents the chance of randomly guessing the correct side for an $N-1$ sided dice, and the red line will represent the chance of randomly guessing the correct side for an $N$ sided dice.
 
 ```{r, include=FALSE}
-prob_generator <- function(m = 5000, N){
-  p_vecs <- matrix(0, nrow = N, ncol = m)
-  sums <- 0
-  for (i in 1:(N-1)){
-    p_vecs[i,] <- runif(n = m, max = 1 - sums)
-    sums <- sums + p_vecs[i,]
-  }
-  p_vecs[N,] <- 1 - sums
-  for (i in 1:m){
-    p_vecs[,i] <- p_vecs[sample(1:N, N),i]
-  }
-  return (p_vecs)
+prob_generator <- function(N, m = 1000, shape = NA){
+  shape <- ifelse(is.na(shape), rep(1, N), shape)
+  gams <- matrix(rgamma(n = N*m, shape = shape), nrow = N)
+  probs <- t(t(gams)/colSums(gams))
+  return(probs)
 }
 
 roll_tester <- function(m, N, p, strat){

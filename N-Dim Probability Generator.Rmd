@@ -14,45 +14,79 @@ output:
 geometry: margin=1.5cm
 ---
 
-\begin{center}
-Here I will show how to generate a random set of probability vectors (arbitrary length $n$). The entries are chosen uniformly from 0 to the left over probability after the previous ones have been chosen then the order is randomized otherwise we will get a pattern of (generally) smaller probabilities near the end.
-\end{center}
+# Summary
 
+\begin{center}
+\doublespacing
+The goals of this document are:
+\end{center}
+\begin{itemize}
+\doublespacing
+\item Explain what an probability vector of length $n$ is and what properties such a vector has.
+\item Illustrate how to generate a random probability vector of length $n$.
+\item Analyze how to bias such a probability vector.
+\item Examine the distribution of the norms of such vectors.
+\end{itemize}
+
+# Importing Libraries
+
+```{r,echo=TRUE,results='hide',warning=FALSE,message=FALSE}
+library(tidyverse)
+library(latex2exp)
+```
+
+\newpage
 # Generator
 
 ```{r}
-prob_generator <- function(N, m = 2500){
-  p_vecs <- matrix(0, nrow = N, ncol = m)
-  sums <- 0
-  for (i in 1:(N-1)){
-    p_vecs[i,] <- runif(n = m, max = 1 - sums)
-    sums <- sums + p_vecs[i,]
-  }
-  p_vecs[N,] <- 1 - sums
-  for (i in 1:m){
-    p_vecs[,i] <- p_vecs[sample(1:N, N),i]
-  }
-  return (p_vecs)
+prob_generator <- function(N, m = 1000, shape = NA){
+  shape <- ifelse(is.na(shape), rep(1, N), shape)
+  gams <- matrix(rgamma(n = N*m, shape = shape), nrow = N)
+  probs <- t(t(gams)/colSums(gams))
+  return(probs)
 }
 ```
 
 \begin{center}
-Quickly note that this actually generates an $n-1$ dimensional vector since once we know $n-1$ values in the vector the final value must make it sum to 1 and hence is fixed. So $n-1$ values are free while one is constrained.
+\doublespacing
+This just uses the Dirichlet distribution for generating the probabilities.
+\\The intuition is that we generate $X_j\sim\mbox{Gamma}(\alpha_j,\lambda)$ for $j\in\{1, ..., n\}$ Then we consider the distribution of $p = (p_1, ..., p_n) =\Big{(}\frac{X_1}{S}, ...,\frac{X_n}{S}\Big{)}$ where $S =\sum_{j=1}^n X_j$.
+\\Note that this is an $n-1$ dimensional vector because we know $\sum_{j=1}^n p_j =\sum_{j=1}^n\frac{X_j}{S} =\frac{1}{S}\sum_{j=1}^n X_j =\frac{S}{S} = 1$. Quick note: once we know $n-1$ of the $p_j$ we know the last one.
+\\Furthermore we also know $X_j\geq 0$ for each $j\in\{1, ..., n\}$ (since $X_j$ follows a gamma distribution) so $S =\sum_{j=1}^n X_j > X_j\geq 0$ for each $j\in\{1, ..., n\}$ as well. Which then tells us that $p_j =\frac{X_j}{S}\geq 0$ and $p_j =\frac{X_j}{S}\leq 1$.
+\\So $p = (p_1, ..., p_n)$ is indeed a probability vector of length $n$.
+\\The support of the Dirichlet distribution is the standard $k-1$ simplex. Which is given by $\Delta_{k-1} =\Big{\{}(p_1, ..., p_n)\in\mathbb{R}^n: \forall_{j\in\{1, ..., n\}}0\leq p_j\leq 1,\sum_{j=1}^n p_j = 1\Big{\}}$.
+\\Furthermore the density can be given by:
+\[f_{p_1, ..., p_n} (p_1, ..., p_n) =\frac{1}{B(\alpha)}\prod_{j=1}^n x_j^{\alpha_j-1}\;\;\mbox{for}\;\;(p_1, ..., p_n)\in\Delta_{k-1}\]
+Where $B(\alpha) =\frac{\Gamma(\alpha_1) ...\Gamma(\alpha_n)}{\Gamma(\alpha_1 + ... +\alpha_n)}$.
+\\The special case where $\alpha_j = 1$ for each $j\in\{1, ..., n\}$ is essentially a uniform distribution over the standard $k-1$ simplex as the density is given by:
+\[f_{p_1, ..., p_n} (p_1, ..., p_n) =\frac{1}{B(\alpha)}\prod_{j=1}^n x_j^{\alpha_j-1} =\frac{1}{B(\alpha)}\prod_{j=1}^n x_j^{1-1} =\frac{1}{B(\alpha)} =\frac{\Gamma(\alpha_1 + ... +\alpha_n)}{\Gamma(\alpha_1) ...\Gamma(\alpha_n)}\]
+\[=\frac{\Gamma (n)}{(\Gamma(1))^n} =\frac{(n-1)!}{(0!)^n} = (n-1)!\;\;\mbox{for}\;\;(p_1, ..., p_n)\in\Delta_{k-1}\]
+It is uniform since clearly the density does not depend on $p = (p_1, ..., p_n)$.
+\newpage
+The above result uses the fact that $\Gamma(k) = (k-1)!$ for $k\in\{1, 2, ...\}$ which I will prove below:
+\[\Gamma(k) =\int_0^\infty t^{k-1}e^{-t}\:dt\]
+This clearly converges for $k-1\geq 0$ i.e. for $k\geq 1$.
+\\Now let $u(t) = t^{k-1}$ and $\frac{dv}{dt} = e^{-t}$ so that $\frac{du}{dt} = (k-1)t^{k-2}$ and $v(t) = -e^{-t}$. Then:
+\[\Gamma(k) =\int_0^\infty t^{k-1}e^{-t}\:dt = u(t)v(t)\Bigg{|}_0^\infty -\int_0^\infty v(t)\frac{du}{dt}dt = -t^{k-1}e^{-t}\Bigg{|}_0^\infty +\int_0^\infty (k-1)t^{k-2} e^{-t}\:dt\]
+\[=\lim_{t\rightarrow\infty}-\frac{t^{k-1}}{e^t} + 0 + (k-1)\int_0^\infty t^{(k-1)-1} e^{-t}\:dt = (k-1)\Gamma(k-1)\]
+Which again converges for $k-1\geq 1$ or equivalently $k\geq 2$.
+\\Therefore if $k\geq 2$ then $\Gamma(k) = (k-1)\Gamma(k-1)$ which seems like a factorial, now we need our base case:
+\[\Gamma(1) =\int_0^\infty t^{1-1}e^{-t}\:dt =\int_0^\infty e^{-t}\:dt =\int_{-\infty}^\infty f_T (t)\:dt = 1 = 0!\;\;\;\mbox{where}\;\;T\sim\mbox{Exponential}(1)\]
+Therefore if $k\geq 1$ we know for $\Gamma(k) = (k-1)\Gamma(k-1) = ... = (k-1)...(2)\Gamma(2) = (k-1)...(2)(1)\Gamma(1) = (k-1)...(2)(1) = (k-1)!$ \qedsymbol
 \end{center}
 
-# First a little testing that this does indeed produce length $n$ probability vectors.
+# Testing that this does indeed produce length $n$ probability vectors.
 
 \begin{center}
-There is always an issue when it comes to machine precision of floating point numbers so that sums can not be exactly one but we can make a simple tolerance based on machine epsilon.
+There is always the issue of machine precision for floating point numbers so the sums can not be exactly one but we can make a simple tolerance based on machine epsilon.
 \end{center}
 
 ```{r}
-tol <- 5*.Machine$double.eps
+tol <- 4.75*.Machine$double.eps
 tol
 
 for (i in 2:1000){
-  m = 1000
-  test <- prob_generator(N = i, m = m)
+  test <- prob_generator(N = i)
   stopifnot(
     min(test) >= 0,
     max(abs(colSums(test) - 1)) <= tol
@@ -64,31 +98,22 @@ for (i in 2:1000){
 As there are no errors we can see that all of these have non-negative probabilities and that they sum to 1 (within our tolerance based on machine imprecision) and hence define length $n$ probability vectors.
 \end{center}
 
-# Examining Distribution
+\newpage
+# Examining Distribution of the Square of the Euclidean Norm
 
 \begin{center}
-The first thing to note is that this generation process for $p = (p_1, ..., p_n)$ is equivalent to that of generating $W_1, ..., W_n\overset{\mbox{iid}}{\sim}\mbox{Exponential}(\lambda) =\mbox{Gamma}(1,\lambda)$ then considering the distribution of $(L_1, ..., L_n) =\frac{(W_1, ..., W_n)}{W_1 + ... + W_n}\sim\mbox{Dirichlet}(1, ..., 1)$ by the properties of the order statistics for uniform random variables. Therefore we know $p = (p_1, ..., p_n)\sim\mbox{Dirichlet}(1, ..., 1)$ and hence:
-\[f_p (p_1, ..., p_n) = (n-1)!\:I\Big{(}\sum_{i=1}^n p_i = 1\Big{)}\prod_{i=1}^{n-1} I(p_i\geq 0)\]
-Meaning that $p$ is uniform over the $n-1$ dimensional simplex (a desirable result).
-\\Below are some graphs to analyze the distribution of $||p||^2$.
+Below are some graphs to analyze the distribution of $||p||^2$.
 \end{center}
-First $n=2$
+\begin{itemize}
+\item First $n=2$:
+\end{itemize}
 
 ```{r}
-suppressWarnings(
-  suppressMessages({
-  library(tidyverse)
-  library(latex2exp)
-  })
-  )
-
 probs <- prob_generator(N = 2, m = 1000000)
-sq_norms <- colSums(probs^2)
-sq_norms <- data.frame(sq_norm = sq_norms)
+sq_norms <- data.frame(sq_norm = colSums(probs^2))
 
 sq_norms %>%
-  ggplot(aes(x = sq_norm)
-         ) +
+  ggplot(aes(x = sq_norm)) +
   geom_histogram(aes(y = after_stat(density)),
                  fill = "lightblue",
                  bins = 100) +
@@ -96,28 +121,27 @@ sq_norms %>%
                linewidth = 0.75) +
   labs(x = TeX("$||p||^2$"),
        y = "Frequency  ",
-       title = TeX("Distribution of Squared Euclidean Norm of $p$")
-       ) +
+       title = TeX("Distribution of Squared Euclidean Norm of $p$")) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5),
         axis.title = element_text(color = "black"),
-        axis.title.y = element_text(angle = 0, vjust = 0.5)
-        )
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
 ```
 
 \begin{center}
 Comment.
 \end{center}
-Now $n=3$
+\newpage
+\begin{itemize}
+\item Now $n=3$:
+\end{itemize}
 
 ```{r}
 probs <- prob_generator(N = 3, m = 1000000)
-sq_norms <- colSums(probs^2)
-sq_norms <- data.frame(sq_norm = sq_norms)
+sq_norms <- data.frame(sq_norm = colSums(probs^2))
 
 sq_norms %>%
-  ggplot(aes(x = sq_norm)
-         ) +
+  ggplot(aes(x = sq_norm)) +
   geom_histogram(aes(y = after_stat(density)),
                  fill = "lightblue",
                  bins = 100) +
@@ -125,28 +149,27 @@ sq_norms %>%
                linewidth = 0.75) +
   labs(x = TeX("$||p||^2$"),
        y = "Frequency  ",
-       title = TeX("Distribution of Squared Euclidean Norm of $p$")
-       ) +
+       title = TeX("Distribution of Squared Euclidean Norm of $p$")) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5),
         axis.title = element_text(color = "black"),
-        axis.title.y = element_text(angle = 0, vjust = 0.5)
-        )
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
 ```
 
 \begin{center}
 Comment.
 \end{center}
-Now $n=5$
+\newpage
+\begin{itemize}
+\item Now $n=5$:
+\end{itemize}
 
 ```{r}
 probs <- prob_generator(N = 5, m = 1000000)
-sq_norms <- colSums(probs^2)
-sq_norms <- data.frame(sq_norm = sq_norms)
+sq_norms <- data.frame(sq_norm = colSums(probs^2))
 
 sq_norms %>%
-  ggplot(aes(x = sq_norm)
-         ) +
+  ggplot(aes(x = sq_norm)) +
   geom_histogram(aes(y = after_stat(density)),
                  fill = "lightblue",
                  bins = 100) +
@@ -154,28 +177,27 @@ sq_norms %>%
                linewidth = 0.75) +
   labs(x = TeX("$||p||^2$"),
        y = "Frequency  ",
-       title = TeX("Distribution of Squared Euclidean Norm of $p$")
-       ) +
+       title = TeX("Distribution of Squared Euclidean Norm of $p$")) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5),
         axis.title = element_text(color = "black"),
-        axis.title.y = element_text(angle = 0, vjust = 0.5)
-        )
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
 ```
 
 \begin{center}
 Comment.
 \end{center}
-Now $n=10$
+\newpage
+\begin{itemize}
+\item Now $n=10$:
+\end{itemize}
 
 ```{r}
 probs <- prob_generator(N = 10, m = 1000000)
-sq_norms <- colSums(probs^2)
-sq_norms <- data.frame(sq_norm = sq_norms)
+sq_norms <- data.frame(sq_norm = colSums(probs^2))
 
 sq_norms %>%
-  ggplot(aes(x = sq_norm)
-         ) +
+  ggplot(aes(x = sq_norm)) +
   geom_histogram(aes(y = after_stat(density)),
                  fill = "lightblue",
                  bins = 100) +
@@ -183,28 +205,27 @@ sq_norms %>%
                linewidth = 0.75) +
   labs(x = TeX("$||p||^2$"),
        y = "Frequency  ",
-       title = TeX("Distribution of Squared Euclidean Norm of $p$")
-       ) +
+       title = TeX("Distribution of Squared Euclidean Norm of $p$")) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5),
         axis.title = element_text(color = "black"),
-        axis.title.y = element_text(angle = 0, vjust = 0.5)
-        )
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
 ```
 
 \begin{center}
 Comment.
 \end{center}
-Now $n=50$
+\newpage
+\begin{itemize}
+\item Now $n=50$:
+\end{itemize}
 
 ```{r}
 probs <- prob_generator(N = 50, m = 1000000)
-sq_norms <- colSums(probs^2)
-sq_norms <- data.frame(sq_norm = sq_norms)
+sq_norms <- data.frame(sq_norm = colSums(probs^2))
 
 sq_norms %>%
-  ggplot(aes(x = sq_norm)
-         ) +
+  ggplot(aes(x = sq_norm)) +
   geom_histogram(aes(y = after_stat(density)),
                  fill = "lightblue",
                  bins = 100) +
@@ -212,28 +233,27 @@ sq_norms %>%
                linewidth = 0.75) +
   labs(x = TeX("$||p||^2$"),
        y = "Frequency  ",
-       title = TeX("Distribution of Squared Euclidean Norm of $p$")
-       ) +
+       title = TeX("Distribution of Squared Euclidean Norm of $p$")) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5),
         axis.title = element_text(color = "black"),
-        axis.title.y = element_text(angle = 0, vjust = 0.5)
-        )
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
 ```
 
 \begin{center}
 Comment.
 \end{center}
-Now $n=1000$
+\newpage
+\begin{itemize}
+\item Now $n=100$:
+\end{itemize}
 
 ```{r}
-probs <- prob_generator(N = 1000, m = 1000000)
-sq_norms <- colSums(probs^2)
-sq_norms <- data.frame(sq_norm = sq_norms)
+probs <- prob_generator(N = 100, m = 1000000)
+sq_norms <- data.frame(sq_norm = colSums(probs^2))
 
 sq_norms %>%
-  ggplot(aes(x = sq_norm)
-         ) +
+  ggplot(aes(x = sq_norm)) +
   geom_histogram(aes(y = after_stat(density)),
                  fill = "lightblue",
                  bins = 100) +
@@ -241,13 +261,39 @@ sq_norms %>%
                linewidth = 0.75) +
   labs(x = TeX("$||p||^2$"),
        y = "Frequency  ",
-       title = TeX("Distribution of Squared Euclidean Norm of $p$")
-       ) +
+       title = TeX("Distribution of Squared Euclidean Norm of $p$")) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5),
         axis.title = element_text(color = "black"),
-        axis.title.y = element_text(angle = 0, vjust = 0.5)
-        )
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
+```
+
+\begin{center}
+Comment.
+\end{center}
+\newpage
+\begin{itemize}
+\item Now $n=1000$:
+\end{itemize}
+
+```{r}
+probs <- prob_generator(N = 1000, m = 1000000)
+sq_norms <- data.frame(sq_norm = colSums(probs^2))
+
+sq_norms %>%
+  ggplot(aes(x = sq_norm)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 fill = "lightblue",
+                 bins = 100) +
+  geom_density(col = "black",
+               linewidth = 0.75) +
+  labs(x = TeX("$||p||^2$"),
+       y = "Frequency  ",
+       title = TeX("Distribution of Squared Euclidean Norm of $p$")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(color = "black"),
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
 ```
 
 \begin{center}
