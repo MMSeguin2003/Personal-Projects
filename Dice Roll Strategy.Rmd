@@ -197,17 +197,13 @@ When N \> 2 it is harder to visualize the graphs, so for the sake of simplicity 
 ```{r, include=FALSE}
 prob_generator <- function(m = 5000, N){
   p_vecs <- matrix(0, nrow = N, ncol = m)
+  sums <- 0
+  for (i in 1:(N-1)){
+    p_vecs[i,] <- runif(n = m, max = 1 - sums)
+    sums <- sums + p_vecs[i,]
+  }
+  p_vecs[N,] <- 1 - sums
   for (i in 1:m){
-    max_p <- 1
-    for (j in 1:(N-1)){
-      if (max_p == 0){
-        p_vecs[j,i] <- 0
-      } else{
-        p_vecs[j,i] <- runif(n = 1, min = 0, max = max_p)
-        max_p <- 1 - sum(p_vecs[,i])
-      }
-    }
-    p_vecs[N,i] <- 1 - sum(p_vecs[,i])
     p_vecs[,i] <- p_vecs[sample(1:N, N),i]
   }
   return (p_vecs)
