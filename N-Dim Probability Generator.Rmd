@@ -54,13 +54,13 @@ This just uses the Dirichlet distribution for generating the probabilities.
 \\Note that this is an $n-1$ dimensional vector because we know $\sum_{j=1}^n p_j =\sum_{j=1}^n\frac{X_j}{S} =\frac{1}{S}\sum_{j=1}^n X_j =\frac{S}{S} = 1$. Quick note: once we know $n-1$ of the $p_j$ we know the last one.
 \\Furthermore we also know $X_j\geq 0$ for each $j\in\{1, ..., n\}$ (since $X_j$ follows a gamma distribution) so $S =\sum_{j=1}^n X_j > X_j\geq 0$ for each $j\in\{1, ..., n\}$ as well. Which then tells us that $p_j =\frac{X_j}{S}\geq 0$ and $p_j =\frac{X_j}{S}\leq 1$.
 \\So $p = (p_1, ..., p_n)$ is indeed a probability vector of length $n$.
-\\The support of the Dirichlet distribution is the standard $k-1$ simplex. Which is given by $\Delta_{k-1} =\Big{\{}(p_1, ..., p_n)\in\mathbb{R}^n: \forall_{j\in\{1, ..., n\}}0\leq p_j\leq 1,\sum_{j=1}^n p_j = 1\Big{\}}$.
+\\The support of the Dirichlet distribution is the standard $n-1$ simplex. Which is given by $\Delta_{n-1} =\Big{\{}(p_1, ..., p_n)\in\mathbb{R}^n: \forall_{j\in\{1, ..., n\}}0\leq p_j\leq 1,\sum_{j=1}^n p_j = 1\Big{\}}$.
 \\Furthermore the density can be given by:
-\[f_{p_1, ..., p_n} (p_1, ..., p_n) =\frac{1}{B(\alpha)}\prod_{j=1}^n x_j^{\alpha_j-1}\;\;\mbox{for}\;\;(p_1, ..., p_n)\in\Delta_{k-1}\]
+\[f_{p_1, ..., p_n} (p_1, ..., p_n) =\frac{1}{B(\alpha)}\prod_{j=1}^n x_j^{\alpha_j-1}\;\;\mbox{for}\;\;(p_1, ..., p_n)\in\Delta_{n-1}\]
 Where $B(\alpha) =\frac{\Gamma(\alpha_1) ...\Gamma(\alpha_n)}{\Gamma(\alpha_1 + ... +\alpha_n)}$.
 \\The special case where $\alpha_j = 1$ for each $j\in\{1, ..., n\}$ is essentially a uniform distribution over the standard $k-1$ simplex as the density is given by:
 \[f_{p_1, ..., p_n} (p_1, ..., p_n) =\frac{1}{B(\alpha)}\prod_{j=1}^n x_j^{\alpha_j-1} =\frac{1}{B(\alpha)}\prod_{j=1}^n x_j^{1-1} =\frac{1}{B(\alpha)} =\frac{\Gamma(\alpha_1 + ... +\alpha_n)}{\Gamma(\alpha_1) ...\Gamma(\alpha_n)}\]
-\[=\frac{\Gamma (n)}{(\Gamma(1))^n} =\frac{(n-1)!}{(0!)^n} = (n-1)!\;\;\mbox{for}\;\;(p_1, ..., p_n)\in\Delta_{k-1}\]
+\[=\frac{\Gamma (n)}{(\Gamma(1))^n} =\frac{(n-1)!}{(0!)^n} = (n-1)!\;\;\mbox{for}\;\;(p_1, ..., p_n)\in\Delta_{n-1}\]
 It is uniform since clearly the density does not depend on $p = (p_1, ..., p_n)$.
 \newpage
 The above result uses the fact that $\Gamma(k) = (k-1)!$ for $k\in\{1, 2, ...\}$ which I will prove below:
@@ -97,6 +97,100 @@ for (i in 2:1000){
 \begin{center}
 As there are no errors we can see that all of these have non-negative probabilities and that they sum to 1 (within our tolerance based on machine imprecision) and hence define length $n$ probability vectors.
 \end{center}
+
+\newpage
+# How to Bias The Generated Probabilities
+
+\begin{center}
+First recall that the standard $\alpha = (\alpha_1, ...,\alpha_n) = (1, ..., 1)$ will produce uniform probabilities over $\Delta_{n-1}$ (which is just $\Omega$ for length $n$ probabilities). For several values of $n$ let us examine the joint distribution of $p_i$ and $p_j$ under the standard $\alpha$.
+\end{center}
+
+## Distribution from the standard $\alpha = (\alpha_1, ...,\alpha_n) = (1, ..., 1)$
+
+The $n=2$ case is trivial as we will just have the line $(p, 1-p)$ so I will skip that case.
+\begin{itemize}
+\item For $n=3$:
+\end{itemize}
+
+```{r}
+probs <- prob_generator(N = 3, m = 1000000)
+p_comp <- data.frame(pi = probs[1,], pj = probs[3,])
+
+p_comp %>%
+  ggplot(aes(x = pi, y = pj)) +
+  geom_bin2d(aes(fill = after_stat(density)),
+             bins = 300) +
+  scale_fill_viridis_c() +
+  labs(x = TeX("$p_i$"),
+       y = TeX("$p_j$"),
+       fill = TeX("$f_{p_i,p_j} (p_i,p_j)$"),
+       title = TeX("$n=3$: Joint Distribution of $(p_i, p_j)$")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(color = "black"),
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
+```
+
+This is exactly what we would expect. Since knowing $p_i$ and $p_j$ entirely determines the final probability and we know $p = (p_1, p_2, p_3)$ is uniform over $\Delta_{n-1} =\Delta_2$ we should see that this is a uniform distribution which it is here.
+
+\newpage
+\begin{itemize}
+\item For $n=4$:
+\end{itemize}
+
+```{r}
+probs <- prob_generator(N = 4, m = 1000000)
+p_comp <- data.frame(pi = probs[1,], pj = probs[4,])
+
+p_comp %>%
+  ggplot(aes(x = pi, y = pj)) +
+  geom_bin2d(aes(fill = after_stat(density)),
+             bins = 300) +
+  scale_fill_viridis_c() +
+  labs(x = TeX("$p_i$"),
+       y = TeX("$p_j$"),
+       fill = TeX("$f_{p_i,p_j} (p_i,p_j)$"),
+       title = TeX("$n=4$: Joint Distribution of $(p_i, p_j)$")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(color = "black"),
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
+```
+
+Again this is exactly what we would expect. $p = (p_1, ..., p_4)$ is now uniform over $\Delta_{n-1} =\Delta_3$. Given Here we are more likely to see smaller values of $p_i$ and $p_j$ since there are now 2 more probabilities we have to account for. So when we assign one of the probabilities the remaining ones must now sum to a value smaller than 1 and so we often see smaller values.
+
+\newpage
+\begin{itemize}
+\item For $n=5$:
+\end{itemize}
+
+```{r}
+probs <- prob_generator(N = 5, m = 1000000)
+p_comp <- data.frame(pi = probs[1,], pj = probs[5,])
+
+p_comp %>%
+  ggplot(aes(x = pi, y = pj)) +
+  geom_bin2d(aes(fill = after_stat(density)),
+             bins = 300) +
+  scale_fill_viridis_c() +
+  labs(x = TeX("$p_i$"),
+       y = TeX("$p_j$"),
+       fill = TeX("$f_{p_i,p_j} (p_i,p_j)$"),
+       title = TeX("$n=5$: Joint Distribution of $(p_i, p_j)$")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(color = "black"),
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
+```
+
+Again this is exactly what we would expect. $p = (p_1, ..., p_5)$ is now uniform over $\Delta_{n-1} =\Delta_4$ and by a similar argument we will see smaller probabilities in this joint graph generally.
+\begin{itemize}
+\item This pattern of smaller probabilities being more likely continues for all $n\in\mathbb{N}$ again by the same reasoning as before.
+\end{itemize}
+
+## Distribution when we change $\alpha$
+
+
 
 \newpage
 # Examining Distribution of the Square of the Euclidean Norm
