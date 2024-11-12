@@ -107,7 +107,7 @@ First recall that the standard $\alpha = (\alpha_1, ...,\alpha_n) = (1, ..., 1)$
 
 ## Distribution from the standard $\alpha = (\alpha_1, ...,\alpha_n) = (1, ..., 1)$
 
-The $n=2$ case is trivial as we will just have the line $(p, 1-p)$ so I will skip that case.
+The $n=2$ case is trivial as we will just have the line $(p, 1-p)$ so I will skip that case. In the symmetric case we don't need to look at all possible pairs of $p_i$ and $p_j$ we can just use one due to exchangeability.
 \begin{itemize}
 \item For $n=3$:
 \end{itemize}
@@ -188,9 +188,73 @@ Again this is exactly what we would expect. $p = (p_1, ..., p_5)$ is now uniform
 \item This pattern of smaller probabilities being more likely continues for all $n\in\mathbb{N}$ again by the same reasoning as before.
 \end{itemize}
 
+\newpage
 ## Distribution when we change $\alpha$
 
+It is a well known fact that the marginal distribution of $p_i$ from a Dirichlet distribution is a $\mbox{Beta}(\alpha_i,(\alpha_1 + ... +\alpha_n) -\alpha_i)$ random variable and therefore $\mathbb{E}[p_i] =\frac{\alpha_i}{\alpha_1 + ... +\alpha_n}$ and hence $\mathbb{E}[p] =\mathbb{E}[(p_1, ..., p_n)] = (\mathbb{E}[p_1], ...,\mathbb{E}[p_n]) = (\frac{\alpha_1}{\alpha_1 + ... +\alpha_n}, ...,\frac{\alpha_n}{\alpha_1 + ... +\alpha_n})$. This allows us to appropriately bias the expectation of the probabilities we get by changing the shape parameters for the gamma distributions used. For example if $n=3$ and we want on average $p_1 = 2p_2$ then we would use $\alpha = (2\lambda,\lambda,\mu)$ to construct our probabilities. Below is a quick example with graphs (using $n=3$ since before we had a uniform joint distribution there) to illustrate that this works. Now the pairs are not exchangeable so we need to examine each pair.
 
+```{r}
+probs <- prob_generator(N = 3, m = 1000000, shape = c(2, 1, 3))
+p_comp <- data.frame(p1 = probs[1,],
+                     p2 = probs[2,],
+                     p3 = probs[3,])
+
+p_comp %>%
+  ggplot(aes(x = p1, y = p2)) +
+  geom_bin2d(aes(fill = after_stat(density)),
+             bins = 300) +
+  scale_fill_viridis_c() +
+  labs(x = TeX("$p_1$"),
+       y = TeX("$p_2$"),
+       fill = TeX("$f_{p_1,p_2} (p_1,p_2)$"),
+       title = TeX("$\ alpha = (2, 1, 3)$: Joint Distribution of $(p_1, p_2)$")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(color = "black"),
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
+```
+
+We see that $p_1$ is more often than not much larger than $p_2$ as expected.
+
+\newpage
+
+```{r}
+p_comp %>%
+  ggplot(aes(x = p1, y = p3)) +
+  geom_bin2d(aes(fill = after_stat(density)),
+             bins = 300) +
+  scale_fill_viridis_c() +
+  labs(x = TeX("$p_1$"),
+       y = TeX("$p_3$"),
+       fill = TeX("$f_{p_1,p_3} (p_1,p_3)$"),
+       title = TeX("$\ alpha = (2, 1, 3)$: Joint Distribution of $(p_1, p_3)$")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(color = "black"),
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
+```
+
+We see that $p_1$ is more often than not slightly smaller than $p_3$ as expected.
+
+\newpage
+
+```{r}
+p_comp %>%
+  ggplot(aes(x = p2, y = p3)) +
+  geom_bin2d(aes(fill = after_stat(density)),
+             bins = 300) +
+  scale_fill_viridis_c() +
+  labs(x = TeX("$p_2$"),
+       y = TeX("$p_3$"),
+       fill = TeX("$f_{p_2,p_3} (p_2,p_3)$"),
+       title = TeX("$\ alpha = (2, 1, 3)$: Joint Distribution of $(p_2, p_3)$")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(color = "black"),
+        axis.title.y = element_text(angle = 0, vjust = 0.5))
+```
+
+We see that $p_2$ is more often than not significantly smaller than $p_3$ as expected.
 
 \newpage
 # Examining Distribution of the Square of the Euclidean Norm
