@@ -1,5 +1,3 @@
-n = input("Enter a non-negative integer n to get the first n primes.\n")
-
 class primes:
     def __init__(self, n):
         self.primes = [2]
@@ -35,6 +33,3 @@ class primes:
                     k += 1
                 j += 2
             return(self.primes)
-
-lst = primes(int(n))
-print(lst)
